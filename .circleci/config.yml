@@ -1,0 +1,128 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: gcc:4.9
+    working_directory: ~/workdir
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - dependencies-{{ checksum "pom.xml" }}
+            # Fallback to using the latest cache if no exact match is found
+            - dependencies-
+      - run: cd build/linux 
+      - run: make
+      - save_cache:
+          paths:
+            - ~/.m2
+            - ~/workdir/antlib
+          key: dependencies-{{ checksum "pom.xml" }}
+      - persist_to_workspace:
+          root: ~/workdir
+          paths:
+            - .
+  deploy:
+    docker:
+      - image: circleci/openjdk:8-jdk-browsers
+    working_directory: ~/workdir
+    steps:
+      - attach_workspace:
+          at: .
+      - restore_cache:
+          keys:
+            - dependencies-{{ checksum "pom.xml" }}
+            # Fallback to using the latest cache if no exact match is found
+            - dependencies-
+      - run:
+          name: Deploy artifacts to artifacts repository
+          command: |
+            project_version=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+            echo "Current maven project.version=${project_version} on branch=${CIRCLE_BRANCH}"
+
+            if [[ ${CIRCLE_BRANCH} != "master" && ${project_version} != *"-SNAPSHOT"* ]]; then
+              echo "Aborting CI build to prevent deploying release (non-SNAPSHOT: ${project_version}) artifacts to artifacts repository from a feature (not master) branch: ${CIRCLE_BRANCH}" >&2
+              echo "When working on feature branches, please ensure the maven project version is updated to match the 'x.y.z-SNAPSHOT' pattern" >&2
+              exit 1
+            fi
+
+            ant -version
+            ant deploy
+  release:
+    docker:
+      - image: circleci/openjdk:8-jdk-browsers
+    working_directory: ~/workdir
+    steps:
+      - attach_workspace:
+          at: .
+      - restore_cache:
+          keys:
+            - dependencies-{{ checksum "pom.xml" }}
+            # Fallback to using the latest cache if no exact match is found
+            - dependencies-
+      - add_ssh_keys:
+          fingerprints:
+            # The fingerprint of GitHub's "CircleCI read-write key" Deploy Key
+            - ""
+      - run:
+          name: Configure SSH known hosts and Git
+          command: |
+            echo "Setting up SSH known hosts for current user: $(whoami)"
+            echo "  adding github.com"
+            # GitHub public key, obtained with "ssh-keyscan github.com"
+            mkdir -p ~/.ssh
+            cat >> ~/.ssh/known_hosts <<EOL
+            github.com ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ==
+            EOL
+
+            echo "Setting up git user as: ${GIT_USER_NAME} <${GIT_USER_EMAIL}>"
+            git config user.name "${GIT_USER_NAME}"
+            git config user.email "${GIT_USER_EMAIL}"
+      - run:
+          name: Prepare and commit new release version and new development version pom.xml files to Git
+          command: |
+            mvn release:clean initialize release:prepare --batch-mode --settings .circleci/.m2/settings.xml
+      - run:
+          name: Deploy new development version snapshot to artifacts repository
+          command: ant deploy
+      - run:
+          name: Deploy release version to artifacts repository
+          command: |
+            # Checkout previous commit which is the release version commit
+            git checkout HEAD~1
+
+            ant deploy
+workflows:
+  version: 2
+  build-and-deploy-snapshot-and-wait-release-approval: # on every commit/push
+    jobs:
+      - build:
+          context: ArtifactRepository
+      - deploy:
+          context: ArtifactRepository
+          requires:
+            - build
+      - wait-release-approval:
+          type: approval # A job that will require manual approval in the CircleCI web application.
+          requires:
+            - deploy
+          filters:
+            branches:
+              only: master
+      - release:
+          context: ArtifactRepository
+          requires:
+            - wait-release-approval
+          filters:
+            branches:
+              only: master
+  daily:
+    triggers:
+      - schedule:
+          cron: "0 5 * * *" # Every day 5 am UTC
+          filters:
+            branches:
+              only: master
+    jobs:
+      - build:
+          context: ArtifactRepository
