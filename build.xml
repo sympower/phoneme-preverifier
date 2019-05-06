@@ -1,0 +1,64 @@
+<project xmlns:aether="antlib:org.eclipse.aether.ant">
+
+	<description>Deploys the externally built (Docker + Make) binary artifacts to artifacts repository</description>
+
+	<property environment="env"/>
+	<property name="source.folder" value="." />
+	<property name="ship.folder" value="./build" />
+
+	<target name="init-aether">
+		<!-- https://wiki.eclipse.org/Aether/Ant_Tasks -->
+
+		<mkdir dir="${source.folder}/antlib" />
+
+		<get src="http://search.maven.org/remotecontent?filepath=org/eclipse/aether/aether-ant-tasks/1.0.0.v20140518/aether-ant-tasks-1.0.0.v20140518-uber.jar"
+				 dest="antlib/aether-ant-tasks-uber.jar" verbose="true" skipexisting="true"/>
+		<fail message="Checksum mismatch for 'antlib/aether-ant-tasks-uber.jar'. Please delete it and rerun ant to redownload.">
+			<condition>
+				<not>
+					<checksum file="antlib/aether-ant-tasks-uber.jar" algorithm="SHA"
+										property="95dadd03392a75564904da45108cf048abe6e5bb" verifyproperty="checksum.matches"/>
+				</not>
+			</condition>
+		</fail>
+
+		<path id="aether-ant-tasks.classpath" path="antlib/aether-ant-tasks-uber.jar" />
+		<typedef classpathref="aether-ant-tasks.classpath"
+						 resource="org/eclipse/aether/ant/antlib.xml"
+						 uri="antlib:org.eclipse.aether.ant" />
+
+		<aether:settings file="${source.folder}/.circleci/.m2/settings.xml" />
+
+		<aether:remoterepo id="release.repo" url="${env.MAVEN_REPO_URL}/maven-releases">
+			<releases enabled="true" updates="daily" />
+			<snapshots enabled="false" />
+			<authentication refid="auth" />
+		</aether:remoterepo>
+
+		<aether:remoterepo id="snapshot.repo" url="${env.MAVEN_REPO_URL}/maven-snapshots">
+			<releases enabled="false" />
+			<snapshots enabled="true" />
+			<authentication refid="auth" />
+		</aether:remoterepo>
+
+		<aether:authentication id="auth" username="${env.MAVEN_REPO_USER}" password="${env.MAVEN_REPO_PASS}" />
+
+		<aether:pom id="pom" file="${source.folder}/pom.xml" />
+
+		<aether:artifacts id="attached">
+			<aether:artifact file="${ship.folder}/linux/preverify" type="exe" classifier="linux"/>
+		</aether:artifacts>
+	</target>
+
+	<target name="install" depends="init-aether" description="Install build artifacts to local Maven repository">
+		<aether:install pomref="pom" artifactsref="attached" />
+	</target>
+
+	<target name="deploy" depends="install" description="Deploy build artifacts to remote Maven repository">
+		<aether:deploy pomref="pom" artifactsref="attached">
+			<remoterepo refid="release.repo"/>
+			<snapshotrepo refid="snapshot.repo"/>
+		</aether:deploy>
+	</target>
+
+</project>

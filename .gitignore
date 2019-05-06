@@ -1,0 +1,3 @@
+/build/linux/*.o
+/build/linux/preverify
+/antlib
