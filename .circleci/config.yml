@@ -66,7 +66,7 @@ jobs:
       - add_ssh_keys:
           fingerprints:
             # The fingerprint of GitHub's "CircleCI read-write key" Deploy Key
-            - ""
+            - "59:a5:dd:8e:35:ff:f4:50:04:72:99:64:14:d8:a6:94"
       - run:
           name: Configure SSH known hosts and Git
           command: |
