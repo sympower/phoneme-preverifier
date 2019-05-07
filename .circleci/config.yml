@@ -11,8 +11,11 @@ jobs:
             - dependencies-{{ checksum "pom.xml" }}
             # Fallback to using the latest cache if no exact match is found
             - dependencies-
-      - run: cd build/linux 
-      - run: make
+      - run:
+          name: Build Linux binary
+          command: |
+            cd build/linux
+            make
       - save_cache:
           paths:
             - ~/.m2
