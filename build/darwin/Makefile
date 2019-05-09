@@ -55,7 +55,7 @@ CC = gcc
 LD = gcc
 
 DEBUG_FLAG =  
-LDFLAGS = -static-libgcc -liconv
+LDFLAGS = -liconv
 
 ifeq ($(DEBUG), true)
    DEBUG_FLAG = -g 
