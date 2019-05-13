@@ -717,8 +717,11 @@ createInternalClass0(CICcontext *context, ClassClass *cb,
     struct Classjava_lang_Class *ucb = unhand(cb);
     bool_t have_inner_classes;
 
-    if (get4bytes(context) != JAVA_CLASSFILE_MAGIC)
+    unsigned long magicNumber = get4bytes(context);
+    if (magicNumber != JAVA_CLASSFILE_MAGIC) {
+    	fprintf(stderr, "Bad magic number: %X in file: %s\n", magicNumber, name);
         JAVA_ERROR(context, "Bad magic number");
+    }
 
     ucb->minor_version = get2bytes(context);
     ucb->major_version = get2bytes(context);
