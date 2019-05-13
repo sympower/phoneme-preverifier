@@ -47,6 +47,7 @@
 #include <oobj.h>
 #include <jar.h>
 #include <locale_md.h>
+#include <errno.h>
 
 /*=========================================================================
  * Globals and extern declarations
@@ -186,6 +187,9 @@ static void ProcessInputs(char *argname)
     char buf[MAXPACKAGENAME];
     struct stat stat_buf;
     int res = stat(argname, &stat_buf);
+    if (res == -1) {
+        printf("stat() returned error: %s (errno %d)\n", strerror(errno), errno);
+    }
     int len;
 
 
