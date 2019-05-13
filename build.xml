@@ -6,14 +6,6 @@
 	<property name="source.folder" value="." />
 	<property name="ship.folder" value="./build" />
 	
-	<!-- TODO: This target will become redundant if we use make clean during the build, remove -->
-	<target name="clean">
-		<delete>
-			<fileset dir="build" includes="**/*.o"/>
-			<fileset dir="build" includes="**/preverify"/>
-		</delete>
-	</target>
-
 	<target name="init-aether">
 		<!-- https://wiki.eclipse.org/Aether/Ant_Tasks -->
 
