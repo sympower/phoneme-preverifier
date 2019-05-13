@@ -43,7 +43,7 @@
 /* 
  * Debug flag for JAR support
  */
-#define JAR_DEBUG 0 
+#define JAR_DEBUG 1
 
 /*=========================================================================
  * JAR file reader defines and macros
