@@ -49,13 +49,14 @@ CFLAGS = \
 	-DUNIX -DLINUX \
 	-DJAVAVERIFY \
 	-DTRIMMED \
-	-D$(ARCH) $(EXTRACFLAGS)
+	-D$(ARCH) $(EXTRACFLAGS) \
+	-m32
 
 CC = gcc
 LD = gcc
 
 DEBUG_FLAG =  
-LDFLAGS = -static
+LDFLAGS = -static -m32
 
 ifeq ($(DEBUG), true)
    DEBUG_FLAG = -g 
