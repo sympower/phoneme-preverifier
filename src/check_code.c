@@ -60,7 +60,7 @@ static void set_protected(context_type *, int inumber, int key, opcode_type);
 static bool_t isSuperClass(context_type *, fullinfo_type);
 
 static void initialize_exception_table(context_type *);
-static int instruction_length(unsigned char *iptr, unsigned char *end);
+static int instruction_length(unsigned char *iptr);
 static bool_t isLegalTarget(context_type *, int offset);
 static void verify_constant_pool_type(context_type *, int, unsigned);
 
@@ -316,7 +316,7 @@ verify_field(context_type *context, struct fieldblock *fb)
     if (  ((access_bits & ACC_PUBLIC) != 0) && 
       ((access_bits & (ACC_PRIVATE | ACC_PROTECTED)) != 0)) {
     if (verbose) { 
-        jio_fprintf(stderr, "verify_field: VERIFIER ERROR %s.%s:\n",
+        jio_fprintf(stderr, "VERIFIER ERROR %s.%s:\n", 
             cbName(fieldclass(fb)), fb->name);
         jio_fprintf(stderr, "Inconsistent access bits.");
     }
@@ -517,13 +517,6 @@ verify_method(context_type *context, struct methodblock *mb)
     CCreinit(context);        /* initial heap */
     code_data = NEW(short, code_length);
 
-//	fprintf(stderr, "\n--------------- code length: %d\n", code_length);
-//	int m;
-//	for(m = 0; m < code_length; m++) {
-//		fprintf(stderr, "%c", code[m]);
-//	}
-//	fprintf(stderr, "\n---------------\n");
-
 #ifdef DEBUG_VERIFIER
     if (verify_verbose) {
     jio_fprintf(stdout, "Looking at %s.%s%s 0x%x\n", 
@@ -550,19 +543,13 @@ verify_method(context_type *context, struct methodblock *mb)
     /* Run through the code.  Mark the start of each instruction, and give
      * the instruction a number */
     for (i = 0, offset = 0; offset < code_length; i++) {
-   	// http://hg.openjdk.java.net/jdk8u/jdk8u-dev/jdk/file/59deb2d00b29/src/share/native/common/check_code.c
-    int length = instruction_length(&code[offset], code + code_length);
-//    int length = instruction_length(&code[offset]);
+    int length = instruction_length(&code[offset]);
     int next_offset = offset + length;
     if (length <= 0) 
         CCerror(context, "Illegal instruction found at offset %d", offset);
-    if (next_offset > code_length) {
-    	// TODO: This additional logging info can be removed, not needed once it's working
+    if (next_offset > code_length) 
         CCerror(context, "Code stops in the middle of instruction "
-            " starting at offset %d, next_offset(%d) > code_length(%d), length(%d), i(%d), code: \n--------------\n%s\n--------------\n",
-			offset, next_offset, code_length, length, i, &code[offset]);
-    }
-
+            " starting at offset %d", offset);
     code_data[offset] = i;
     while (++offset < next_offset)
         code_data[offset] = -1; /* illegal location */
@@ -585,7 +572,7 @@ verify_method(context_type *context, struct methodblock *mb)
     CCerror(context, "Empty code");
     
     for (inumber = 0, offset = 0; offset < code_length; inumber++) {
-    int length = instruction_length(&code[offset], code + code_length);
+    int length = instruction_length(&code[offset]);
     instruction_data_type *this_idata = &idata[inumber];
     this_idata->opcode = code[offset];
     this_idata->offset = offset;
@@ -1263,16 +1250,12 @@ initialize_exception_table(context_type *context)
  *                
  *   returns:     int type
  *=======================================================================*/
-static int instruction_length(unsigned char *iptr, unsigned char *end)
+static int instruction_length(unsigned char *iptr)
 {
     int instruction = *iptr;
     switch (instruction) {
         case opc_tableswitch: {
-        int *lpc = (int *) UCALIGN(iptr + 1);
-
-        if (lpc + 2 >= (int *)end) {
-            return -1; /* do not read pass the end */
-        }
+        long *lpc = (long *) UCALIGN(iptr + 1);
         int index = ntohl(lpc[2]) - ntohl(lpc[1]);
         if ((index < 0) || (index > 65535)) {
         return -1;    /* illegal */
@@ -1282,14 +1265,8 @@ static int instruction_length(unsigned char *iptr, unsigned char *end)
     }
         
     case opc_lookupswitch: {
-        int *lpc = (int *) UCALIGN(iptr + 1);
-        int npairs;
-        if (lpc + 1 >= (int *)end)
-            return -1; /* do not read pass the end */
-        npairs = ntohl(lpc[1]);
-        /* There can't be more than 64K labels because of the limit
-         * on per-method byte code length.
-         */
+        long *lpc = (long *) UCALIGN(iptr + 1);
+        int npairs = ntohl(lpc[1]);
         if (npairs < 0 || npairs >= 8192) 
         return  -1;
         else 
@@ -1297,8 +1274,6 @@ static int instruction_length(unsigned char *iptr, unsigned char *end)
     }
 
     case opc_wide: 
-        if (iptr + 1 >= end)
-            return -1; /* do not read pass the end */
         switch(iptr[1]) {
             case opc_ret:
             case opc_iload: case opc_istore: 
@@ -3450,10 +3425,10 @@ CCerror (context_type *context, char *format, ...)
     struct methodblock *mb = context->mb;
     printCurrentClassName();
     if (mb != 0) {
-        jio_fprintf(stderr, "CCerror: VERIFIER ERROR %s.%s%s:\n",
+        jio_fprintf(stderr, "VERIFIER ERROR %s.%s%s:\n", 
             cbName(fieldclass(&mb->fb)), mb->fb.name, mb->fb.signature);
     } else {
-        jio_fprintf(stderr, "CCerror: VERIFIER ERROR class %s (mb uninitialized):\n",
+        jio_fprintf(stderr, "VERIFIER ERROR class %s (mb uninitialized):\n",
             cbName(context->class));
     }
     va_start(args, format);
