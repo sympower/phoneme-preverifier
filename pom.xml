@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>phone-j2me</groupId>
+	<groupId>net.sympower.wtk</groupId>
 	<artifactId>preverify</artifactId>
 	<packaging>pom</packaging>
 	<version>1.1-SNAPSHOT</version>
@@ -68,9 +68,9 @@
     </distributionManagement>
 
     <scm>
-      <url>https://github.com/sympower/preverifier</url>
-      <connection>git@github.com:sympower/preverifier.git</connection>
-      <developerConnection>scm:git:git@github.com:sympower/preverifier.git</developerConnection>
+      <url>https://github.com/sympower/phoneme-preverifier</url>
+      <connection>git@github.com:sympower/phoneme-preverifier.git</connection>
+      <developerConnection>scm:git:git@github.com:sympower/phoneme-preverifier.git</developerConnection>
       <tag>HEAD</tag>
     </scm>
 	
