@@ -1,5 +1,4 @@
-FROM debian:latest
-#FROM gcc:9.1
+FROM debian:9.9
 
 RUN apt-get update && apt-get install -y libc6-dev-i386 build-essential
 

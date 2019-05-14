@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: gcc:4.9
+      - image: debian:9.9
     working_directory: ~/workdir
     steps:
       - checkout
@@ -13,9 +13,7 @@ jobs:
             - dependencies-
       - run:
           name: Build Linux binary
-          command: |
-            cd build/linux
-            make
+          command: ./build.sh
       - save_cache:
           paths:
             - ~/.m2

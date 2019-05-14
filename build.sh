@@ -3,10 +3,13 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-# Clean up, if needed
-rm -f build/linux/*.o
-rm -f build/linux/preverifier
+printf "\nBuilding Docker image to compile binaries for Linux ...\n\n"
+build/linux/build-image.sh
 
-docker run --rm -v "$PWD":/preverifier -w /preverifier/build/linux gcc:4.9 make
+printf "\nRunning Docker image to compile binaries for Linux ...\n\n"
+build/linux/run-image.sh
+
+printf "\nInstalling artifacts to artifact repository ...\n\n"
+ant install
 
 echo "SUCCESS! Binary can be found at: build/linux/preverifier"
