@@ -359,9 +359,9 @@ findJARDirectories(zip_t *entry, struct stat *statbuf)
  *   returns:     CRC
  *=======================================================================*/
 
-static unsigned int
+static unsigned long
 jarCRC32(unsigned char *data, unsigned long length) {
-    unsigned int crc = 0xFFFFFFFF;
+    unsigned long crc = 0xFFFFFFFF;
     unsigned int j;
     for ( ; length > 0; length--, data++) {
         crc ^= *data;
@@ -518,16 +518,6 @@ loadJARfile(zip_t *entry, const char* filename)
     actualCRC = jarCRC32(decompData, decompLen);
     if (actualCRC != expectedCRC) {
         printf("loadJARfile: Unexpected CRC value for file: '%s', expected = %lu, actual = %lu\n", filename, expectedCRC, actualCRC);
-
-        char crcDebugFilename[1024] = "";
-        strcpy(crcDebugFilename, "/tmp/debug/");
-        strcat(crcDebugFilename, "Object.class");
-        printf("Writing decompData with length %lu to %s\n", decompLen, crcDebugFilename);
-
-        FILE *crcFile = fopen(crcDebugFilename, "wb");
-        fwrite(decompData, 1, decompLen, crcFile);
-        fclose(crcFile);
-        printf("  Successfully wrote decompData to %s\n", crcDebugFilename);
     }
 
     done:
