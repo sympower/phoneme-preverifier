@@ -1,7 +1,4 @@
-#!/bin/sh
-
-set -euo pipefail
-IFS=$'\n\t'
+#!/bin/bash -e
 
 printf "\nBuilding Docker image to compile binaries for Linux ...\n\n"
 build/linux/build-image.sh
