@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: debian:9.9
+      - image: circleci/openjdk:8-jdk-browsers
     working_directory: ~/workdir
     steps:
       - checkout
@@ -11,10 +11,13 @@ jobs:
             - dependencies-{{ checksum "pom.xml" }}
             # Fallback to using the latest cache if no exact match is found
             - dependencies-
+      - setup_remote_docker:
+          version: 18.09.3
+          docker_layer_caching: true
       - run:
           name: Build Linux binary
           command: |
-            chmod +x build.sh build/linux/*.sh
+            chmod +x build.sh
             ./build.sh
       - save_cache:
           paths:
