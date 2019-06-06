@@ -1,3 +1,6 @@
-/build/linux/*.o
-/build/linux/preverify
-/antlib
+build/linux/*.o
+build/linux/preverify
+build/darwin/*.o
+build/darwin/preverify
+antlib
+.idea
