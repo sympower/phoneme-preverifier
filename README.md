@@ -7,3 +7,4 @@ Fork of Phone-J2ME preverifier in order to build a (more) modern Java ME preveri
 ## Building
 
 Check out the source code and run `build.sh`. Binary can be found in `build/linux/preverifier`.
+
