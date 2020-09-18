@@ -19,6 +19,7 @@ jobs:
           command: |
             chmod +x build.sh
             ./build.sh
+            chmod -x build.sh
       - save_cache:
           paths:
             - ~/.m2
